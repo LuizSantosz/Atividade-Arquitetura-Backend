@@ -1,0 +1,84 @@
+TRABALHO DE ARQUITETURA BACKEND
+
+PS C:\Users\Luiz\Documents\Python> Set-Location C:\Users\Luiz\Documents\Python\arquitetura-software\codigos\cap01-estilos-fundamentais\1.2-estilo-em-camadas
+PS C:\Users\Luiz\Documents\Python\arquitetura-software\codigos\cap01-estilos-fundamentais\1.2-estilo-em-camadas> py main.py                                                                                                               
+============================================================
+  SISTEMA DE AGENDAMENTO DE CLÍNICA MÉDICA
+  Demonstração — Estilo Arquitetural em Camadas
+============================================================
+
+────────────────────────────────────────────────────────────
+  1. Agendando consultas válidas
+────────────────────────────────────────────────────────────
+HTTP 201 CREATED → {'id': 1, 'medico': 'Dra. Ana Silva', 'paciente': 'Maria Santos', 'horario': '09:00–09:30', 'status': 'agendada'}
+HTTP 201 CREATED → {'id': 2, 'medico': 'Dra. Ana Silva', 'paciente': 'Carlos Oliveira', 'horario': '10:00–10:30', 'status': 'agendada'}
+HTTP 201 CREATED → {'id': 3, 'medico': 'Dr. João Costa', 'paciente': 'Lúcia Ferreira', 'horario': '14:00–14:20', 'status': 'agendada'}
+
+────────────────────────────────────────────────────────────
+  2. Tentando agendar com CONFLITO de horário (esperado: HTTP 409)
+────────────────────────────────────────────────────────────
+HTTP 409 CONFLICT → {'erro': 'Dr(a). Dra. Ana Silva já tem consulta das 09:00 às 09:30.'}
+
+────────────────────────────────────────────────────────────
+  3. Agenda do dia — Dra. Ana em 10/06/2025
+────────────────────────────────────────────────────────────
+HTTP 200 OK → [{'id': 1, 'paciente': 'Maria Santos', 'horario': '09:00–09:30', 'status': 'agendada'}, {'id': 2, 'paciente': 'Carlos Oliveira', 'horario': '10:00–10:30', 'status': 'agendada'}]
+
+────────────────────────────────────────────────────────────
+  4. Realizando a consulta #1
+────────────────────────────────────────────────────────────
+HTTP 200 OK → {'id': 1, 'status': 'realizada', 'observacoes': 'Paciente sem alterações. Retorno em 6 meses.'}
+
+────────────────────────────────────────────────────────────
+  5. Cancelando a consulta #2
+────────────────────────────────────────────────────────────
+HTTP 200 OK → {'id': 2, 'status': 'cancelada'}
+
+────────────────────────────────────────────────────────────
+  6. Tentando cancelar consulta já cancelada (esperado: HTTP 400)
+────────────────────────────────────────────────────────────
+HTTP 400 BAD REQUEST → {'erro': "Impossível cancelar consulta com status 'cancelada'."}
+
+────────────────────────────────────────────────────────────
+  7. Agenda após alterações
+────────────────────────────────────────────────────────────
+HTTP 200 OK → []
+
+────────────────────────────────────────────────────────────
+  8. Histórico da paciente Maria
+────────────────────────────────────────────────────────────
+HTTP 200 OK → [{'id': 1, 'medico': 'Dra. Ana Silva', 'horario': '09:00–09:30', 'status': 'realizada'}]
+
+────────────────────────────────────────────────────────────
+  9. OCP em ação — trocando implementação de repositório
+────────────────────────────────────────────────────────────
+   A camada de negócios (AgendamentoServico) não muda.
+   Em produção, InMemoria* seria substituído por Postgres*.
+   O contrato (ABC RepositorioConsulta) garante a troca sem impacto.
+
+===================================
+=  Exploração em dupla            =
+===================================
+Questões exploratórias:
+1.	Onde a entrada é convertida em uma chamada ao serviço e onde a resposta HTTP é formatada?
+Resposta: A camada de apresentacao.py recebe a entrada e a transforma em uma chamada ao serviço. Essa mesma camada é responsável por formatar a saída em respostas HTTP (201, 409, 200, 400).
+
+2.	Qual regra impede o conflito de agenda? Que objeto do domínio ajuda a expressá-la?
+Reposta: A regra está na camada de servicos.py, que verifica se existe uma consulta no mesmo horário e para o mesmo médico. O objeto do domínio que ajuda a expressar essa regra é a Agenda, pois contém os horários e permite validar sobreposição.
+
+3.	Que dependência precisaria mudar para substituir o armazenamento em memória, e qual camada deveria permanecer estável?
+Resposta: Precisaria mudar a camada de repositorios.py, trocando a implementação de armazenamento em memória por outra como banco de dados Postgres. A camada de serviço deve permanecer estável, pois ela depende apenas da interface do repositório e não da implementação concreta.
+
+
+===================================
+=  Extensão reversível            =
+===================================
+Descreva o que mudou na saída e qual responsabilidade foi afetada. Não há uma alteração canônica: escolha uma hipótese que você consiga explicar. 
+Para reverter, exclua a cópia em entregas/unidade-1/camadas e faça a cópia novamente; o exemplo original não deve ser modificado.
+
+Resposta: Antes da alteração, ao tentar agendar uma consulta no mesmo horário, o sistema retornava HTTP 409 CONFLICT, mostrando que havia um conflito de agenda.
+Depois que modifiquei os horários no código, o sistema passou a aceitar o agendamento normalmente, retornando HTTP 201 CREATED, já que não havia mais sobreposição.
+A responsabilidade afetada foi a camada de servicos.py, pois é nela que está implementada a regra de negócio que verifica conflitos de horário.
+Ao mudar a condição, a regra de negócio foi diretamente impactada e a saída do sistema refletiu isso. 
+A arquitetura em camadas mostrou que a alteração ficou isolada na lógica de serviço, sem afetar outras partes do sistema como apresentação ou repositório.
+

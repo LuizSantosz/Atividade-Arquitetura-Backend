@@ -1,0 +1,113 @@
+==============================
+=  Questões exploratórias:   =
+==============================
+
+Qual parte recebe dados brutos e qual parte apresenta o resultado final?
+
+Resposta: O começo do processo é o producer. Ele é responsável por jogar os currículos dentro do pipeline, sem nenhum tratamento inicial. É a porta de entrada dos dados.
+O resultado final aparece no consumer, que pega os candidatos aprovados e monta o ranking. É a etapa que mostra quem realmente passou por toda a triagem.
+
+Em que etapas itens deixam de seguir pelo pipe? Em que etapa eles são transformados sem descarte?
+
+Reposta: No fim da linha está o consumer, que pega os candidatos aprovados e monta o ranking. É a parte que mostra o resultado final de toda a triagem. 
+Nos transformers, os dados não são eliminados, apenas ajustados. Campos são normalizados, formatos padronizados e o score é calculado. É como arrumar os currículos para que fiquem comparáveis.
+
+Por que o ranking pertence ao fim do fluxo? Que efeito teria reorganizar filtros?
+
+Resposta: O ranking só faz sentido depois que todos os filtros foram aplicados. Se viesse antes, incluiria candidatos inválidos ou dados inconsistentes. 
+No fim, ele mostra apenas quem realmente passou por todas as etapas.
+Se a ordem fosse diferente, o resultado poderia sair distorcido. Por exemplo, calcular score antes de eliminar currículos inválidos faria aparecer no ranking pessoas que não deveriam estar lá. 
+Ou aplicar o filtro salarial antes de normalizar poderia reprovar alguém por erro de formato.
+
+============================================================
+  PIPELINE DE TRIAGEM DE CURRÍCULOS
+  Demonstração — Estilo Pipes and Filters
+============================================================
+
+Vaga: Engenheiro(a) de Software Backend
+Requisitos: ≥3 anos | Orçamento: R$18,000
+Habilidades: Python, PostgreSQL, Docker, REST
+
+Processando 6 currículos...
+
+Pipeline: Pipeline(LeitorDeCurriculos → ValidadorDeCurriculo → NormalizadorDeCampos → FiltroPorExperienciaMinima → FiltroPorPretensaoSalarial → CalculadorDeScore → RelatorioDeTriagem)
+
+  [DESCARTADO] Currículo id=3: nome ausente
+  [REPROVADO] Bruno Rocha: 1 ano(s) < mínimo 3
+  [REPROVADO] Clara Mendes: pretensão R$22,000 > máximo R$18,000
+
+════════════════════════════════════════════════════════════
+  TRIAGEM CONCLUÍDA — 3 candidato(s) aprovado(s)
+════════════════════════════════════════════════════════════
+
+  1. Ana Lima
+     Score: ██████████ 100%
+     Habilidades compatíveis: docker, python, rest, postgresql
+     Experiência: 5 ano(s) | Pretensão: R$14,000
+     Cidade: São Paulo
+
+  2. Elena Souza
+     Score: ██████████ 100%
+     Habilidades compatíveis: docker, python, rest, postgresql
+     Experiência: 3 ano(s) | Pretensão: R$12,000
+     Cidade: Recife
+
+  3. Diego Faria
+     Score: ███████░░░ 75%
+     Habilidades compatíveis: python, rest, postgresql
+     Experiência: 6 ano(s) | Pretensão: R$16,000
+     Cidade: São Paulo
+
+===================================
+=  Extensão reversível            =
+===================================
+
+Antes da alteração, o pipeline descartava currículos sem nome, reprovava quem tinha menos de 3 anos de experiência e eliminava quem pedia salário acima de R$18.000.
+Depois que aumentei o orçamento para R$25.000, a candidata Clara Mendes deixou de ser reprovada e apareceu no ranking final.
+A responsabilidade afetada foi a camada de testers, já que o critério de validação salarial mudou.
+Em resumo, a saída mostrou que ao mexer em um filtro específico, o efeito aparece claramente no resultado final, sem precisar alterar o restante do fluxo.
+
+------------------------------------------------------------
+  PIPELINE DE TRIAGEM DE CURRICULOS
+  Demonstracao - Estilo Pipes and Filters
+
+------------------------------------------------------------
+Requisitos: >=3 anos | Orcamento: R$22,000
+Habilidades: Python, PostgreSQL, Docker, REST
+
+Processando 6 curr├¡culos...
+
+Pipeline: Pipeline(LeitorDeCurriculos ÔåÆ ValidadorDeCurriculo ÔåÆ NormalizadorDeCampos ÔåÆ FiltroPorExperienciaMinima ÔåÆ FiltroPorPretensaoSalarial ÔåÆ CalculadorDeScore ÔåÆ RelatorioDeTriagem)
+
+  [DESCARTADO] Curr├¡culo id=3: nome ausente
+  [REPROVADO] Bruno Rocha: 1 ano(s) < m├¡nimo 3
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  TRIAGEM CONCLU├ìDA ÔÇö 4 candidato(s) aprovado(s)
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+
+  1. Ana Lima
+     Score: ÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûê 100%
+     Habilidades compat├¡veis: postgresql, python, docker, rest
+     Experi├¬ncia: 5 ano(s) | Pretens├úo: R$14,000
+     Cidade: S├úo Paulo
+
+  2. Elena Souza
+     Score: ÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûê 100%
+     Habilidades compat├¡veis: postgresql, python, docker, rest
+     Experi├¬ncia: 3 ano(s) | Pretens├úo: R$12,000
+     Cidade: Recife
+
+  3. Clara Mendes
+     Score: ÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûæÔûæÔûæ 75%
+     Habilidades compat├¡veis: python, docker, rest
+     Experi├¬ncia: 4 ano(s) | Pretens├úo: R$22,000
+     Cidade: Belo Horizonte
+
+  4. Diego Faria
+     Score: ÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûæÔûæÔûæ 75%
+     Habilidades compat├¡veis: python, postgresql, rest
+     Experi├¬ncia: 6 ano(s) | Pretens├úo: R$16,000
+     Cidade: S├úo Paulo
+
+  > 4 candidato(s) encaminhado(s) para entrevista.
