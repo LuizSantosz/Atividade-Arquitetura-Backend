@@ -1,0 +1,30 @@
+PS C:\Users\Luiz> cd C:\Users\Luiz\Documents\Python\arquitetura-software\laboratorios\plataforma-hospitalar
+PS C:\Users\Luiz\Documents\Python\arquitetura-software\laboratorios\plataforma-hospitalar> .venv\Scripts\python.exe -m pytest tests/test_api_contract.py -q 2>&1 | Tee-Object -FilePath evidencias\testes-contrato.txt
+.......                                                                  [100%]
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  C:\Users\Luiz\Documents\Python\arquitetura-software\laboratorios\plataforma-hospitalar\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+7 passed, 1 warning in 0.48s
+
+==================================================================================
+
+PS C:\Users\Luiz\Documents\Python\arquitetura-software\laboratorios\plataforma-hospitalar> npx @stoplight/spectral-cli@6.16.1 lint evidencias\openapi-experimento.yaml
+Need to install the following packages:
+@stoplight/spectral-cli@6.16.1
+Ok to proceed? (y) y
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated sourcemap-codec@1.4.8: Please use @jridgewell/sourcemap-codec instead
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+
+c:/Users/Luiz/Documents/Python/arquitetura-software/laboratorios/plataforma-hospitalar/evidencias/openapi-experimento.yaml
+ 35:24  error  oas3-valid-media-example  "cpf" property must match pattern "^\d{11}$"  paths./elegibilidades.post.requestBody.content.application/json.examples.pedidoValido.value.cpf
+
+✖ 1 problem (1 error, 0 warnings, 0 infos, 0 hints)
+npm notice
+npm notice New major version of npm available! 11.17.0 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice

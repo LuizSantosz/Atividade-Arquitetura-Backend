@@ -1,0 +1,71 @@
+=============================================================================
+METODO POST
+
+Code 202 
+
+Pedido aceito para processamento.
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "protocolo": "string",
+  "situacao": "recebida",
+  "criado_em": "2026-08-29T19:08:50.562Z"
+}
+Headers:
+Name	Description	Type
+Location	
+Caminho do recurso aceito.
+
+string
+
+=============================================================================
+METODO GET
+
+Code 202
+
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "protocolo": "string",
+  "situacao": "recebida",
+  "criado_em": "2026-08-29T19:17:34.120Z"
+}
+=============================================================================
+METODO POST SEM cpf
+
+Code	Details
+422	
+Error: Unprocessable Entity
+
+Response body
+Download
+{
+  "codigo": "dados_invalidos",
+  "mensagem": "A requisição não atende ao contrato.",
+  "detalhes": [
+    {
+      "campo": "body.cpf",
+      "mensagem": "String should match pattern '^\\d{11}$'",
+      "tipo": "string_pattern_mismatch"
+    }
+  ]
+}
+Response headers
+ content-length: 201 
+ content-type: application/json 
+ date: Sat,29 Aug 2026 19:19:55 GMT 
+ server: uvicorn 
+
+=============================================================================
+ 
