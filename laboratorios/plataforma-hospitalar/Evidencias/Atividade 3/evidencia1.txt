@@ -1,0 +1,130 @@
+=========================================
+= 1. Ambiente e versões das ferramentas =
+=========================================
+
+PS> docker --version
+Docker version 29.7.2, build a7dcaa6
+
+PS> docker version
+Client:
+ Version:           29.7.2
+ API version:       1.55
+ OS/Arch:           windows/amd64
+Server: Docker Desktop 4.88.1 (237512)
+ Engine:
+  Version:          29.7.2
+
+PS> docker compose version
+Docker Compose version v5.4.0
+
+PS> python --version
+Python 3.12.0
+
+=========================================
+= 2. Validação estática da configuração =
+=========================================
+
+PS> $env:ELEGIBILIDADE_PORT = 18001
+PS> $env:EXAMES_PORT = 18002
+
+PS> docker compose -f infra\compose.servicos.yml config --quiet
+PS> echo $LASTEXITCODE
+0
+
+PS> docker compose -f infra\compose.servicos.yml config --services
+db_elegibilidade
+db_exames
+elegibilidade
+exames
+
+====================================================
+= 3. Estado nominal — os quatro serviços saudáveis =
+====================================================
+
+Health checks confirmados via HTTP
+
+GET /health (elegibilidade) → 200 OK
+{"status":"ok","servico":"elegibilidade"}
+
+GET /health (exames) → 200 OK
+{"status":"ok","servico":"exames"}
+
+====================================================
+= 4. Criação de uma solicitação de exame elegível  =
+====================================================
+
+HTTP 201
+===================================
+PS> curl.exe -i -X POST "http://localhost:$env:EXAMES_PORT/exames" -H "Content-Type: application/json" --data-binary "@exame.json"
+HTTP/1.1 201 Created
+date: Sat, 12 Sep 2026 20:33:10 GMT
+server: uvicorn
+content-length: 102
+content-type: application/json
+
+====================================================
+= 5. Falha parcial - derrubando Elegibilidade      =
+====================================================
+
+PS> docker compose -f infra\compose.servicos.yml stop elegibilidade
+✔ Container infra-elegibilidade-1 Stopped
+
+PS> docker compose -f infra\compose.servicos.yml ps
+NAME                       SERVICE            STATUS                 PORTS
+infra-db_elegibilidade-1   db_elegibilidade   Up (healthy)           5432/tcp
+infra-db_exames-1          db_exames          Up (healthy)           5432/tcp
+infra-exames-1             exames             Up (healthy)           0.0.0.0:18002->8000/tcp
+
+Chamada que depende do vizinho: falha
+
+HTTP 503
+===================================
+PS> curl.exe -i -X POST "http://localhost:$env:EXAMES_PORT/exames" -H "Content-Type: application/json" --data-binary "@exame.json"
+HTTP/1.1 503 Service Unavailable
+date: Sat, 12 Sep 2026 20:39:22 GMT
+server: uvicorn
+content-length: 48
+content-type: application/json
+
+{"detail":{"codigo":"dependencia_indisponivel"}}
+
+Ao mesmo tempo, o próprio serviço se declara saudável
+
+HTTP 200
+===================================
+PS> curl.exe -i "http://localhost:$env:EXAMES_PORT/health"
+HTTP/1.1 200 OK
+date: Sat, 12 Sep 2026 20:39:40 GMT
+server: uvicorn
+content-length: 34
+content-type: application/json
+
+{"status":"ok","servico":"exames"}
+
+==================================
+= 6. Recuperação                 =
+==================================
+
+HTTP 200
+===================================
+PS> docker compose -f infra\compose.servicos.yml up -d --wait
+✔ Container infra-exames-1           Healthy
+✔ Container infra-db_elegibilidade-1 Healthy
+✔ Container infra-db_exames-1        Healthy
+✔ Container infra-elegibilidade-1    Healthy
+
+PS> curl.exe -i "http://localhost:$env:ELEGIBILIDADE_PORT/health"
+HTTP/1.1 200 OK
+{"status":"ok","servico":"elegibilidade"}
+
+PS> curl.exe -i "http://localhost:$env:EXAMES_PORT/health"
+HTTP/1.1 200 OK
+{"status":"ok","servico":"exames"}
+
+==============================================
+= 7. Verificação automatizada das fronteiras =
+==============================================
+
+PS> py -m pytest tests\test_service_boundaries.py -q
+....                                                                    [100%]
+4 passed, 2 warnings in 0.77s
