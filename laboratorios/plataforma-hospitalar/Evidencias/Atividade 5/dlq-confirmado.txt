@@ -1,0 +1,5 @@
+{
+  "name": "billing.resultados.v1.dlq",
+  "messages": 1,
+  "messages_ready": 1
+}

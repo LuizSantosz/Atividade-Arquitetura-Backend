@@ -1,0 +1,8 @@
+=== 1a publicacao ===
+Publicado: ResultadoLaboratorialDisponibilizado.v1 event_id=3fa85f64-5717-4562-b3fc-2c963f66afa6
+=== 1o consumo (esperado: processed=True attempts=1) ===
+ResultadoLaboratorialDisponibilizado.v1 event_id=3fa85f64-5717-4562-b3fc-2c963f66afa6 processed=True attempts=1
+=== 2a publicacao, mesmo event_id ===
+Publicado: ResultadoLaboratorialDisponibilizado.v1 event_id=3fa85f64-5717-4562-b3fc-2c963f66afa6
+=== 2o consumo (esperado: processed=False attempts=2) ===
+ResultadoLaboratorialDisponibilizado.v1 event_id=3fa85f64-5717-4562-b3fc-2c963f66afa6 processed=False attempts=2

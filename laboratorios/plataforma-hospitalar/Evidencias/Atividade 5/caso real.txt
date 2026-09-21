@@ -1,0 +1,28 @@
+caso real
+1. As três fases e o que caracterizava a comunicação em cada uma
+
+Fase 1 — Leo (monólito). Tudo concentrado num único processo Java, falando diretamente com um punhado de bancos de dados. Não existia "comunicação entre serviços" porque não existiam serviços separados — toda regra de negócio e todo acesso a dado viviam no mesmo processo.
+Fase 2 — serviços síncronos ("Kill Leo"). Comunicação por chamadas RPC (depois padronizadas em Rest.li, JSON sobre HTTP) entre serviços decompostos — grafo, busca, perfil, comunicações, grupos. Uma requisição de página dependia de uma cadeia dessas chamadas em sequência, cada serviço esperando a resposta do anterior para concluir.
+Fase 3 — log compartilhado (Kafka). Comunicação por publicação num log distribuído: o produtor escreve o fato uma vez, sem saber quem vai consumir, e cada consumidor lê no próprio ritmo, de forma assíncrona e independente.
+
+2. Por que uma cadeia síncrona produz disponibilidade combinada pior que qualquer serviço isolado
+
+É consequência de probabilidade multiplicativa. Se cada serviço tem, digamos, 99,9% de disponibilidade, e uma requisição depende de N desses serviços respondendo em sequência, a chance de todos responderem com sucesso é o produto das probabilidades individuais — 0,999ᴺ — que cai rápido conforme N cresce (com 50 serviços na cadeia, já cai para cerca de 95%). Cada elo falha de forma independente, e como o resultado final depende de todos terem sucesso, não existe "falha parcial aceitável" numa cadeia estritamente síncrona. Por isso a disponibilidade combinada é sempre pior que a do elo mais confiável — geralmente pior até que a do elo mais fraco sozinho.
+
+3. As três consequências de "ler não consome a mensagem"
+
+O produtor deixa de conhecer os consumidores — escreve o fato e termina, sem saber quantos sistemas vão reagir nem quando, rompendo o acoplamento direto que existia na Fase 2.
+Um consumidor novo pode ser plugado meses depois e reprocessar o histórico retido sem pedir nada a ninguém — a integração vira uma inscrição, não uma mudança na origem.
+Um consumidor lento deixa de pressionar o produtor, porque a espera vira armazenamento em disco (a mensagem simplesmente continua ali) em vez de uma fila crescendo do lado de quem produz ou uma chamada síncrona travada.
+
+4. Cluster local vs. agregador — origem das mensagens e domínio de falha
+
+O cluster local recebe só as mensagens produzidas naquele datacenter específico, para uma categoria de mensagem — é a origem mais próxima do produtor. O agregador não produz nada por si só: recebe, por espelhamento, cópias de todos os clusters locais daquela mesma categoria, combinando-as numa visão única. Quanto ao domínio de falha: o cluster local contém o impacto de um incidente àquele datacenter — um problema ali não se propaga automaticamente para os demais. Um cluster único de porte global, sem essa separação em duas camadas, transformaria qualquer incidente local num incidente que afeta a topologia inteira — exatamente o risco que essa arquitetura existe para conter.
+
+5. Trabalho operacional antes e depois do Kafka
+
+Antes, o trabalho era coordenar chamadas síncronas: cada par de sistemas trocando informação ganhava sua própria integração, com formato, semântica de falha e dono próprios, e cada consumidor novo de um fato já existente exigia mexer na origem. Depois da adoção do Kafka em escala, o trabalho mudou de natureza — passou a ser operar um sistema de armazenamento distribuído (particionamento, replicação, atraso de consumo, evolução de esquema), o que exigiu ferramental que não existia: o Cruise Control (manutenção e recuperação automática do cluster), o Brooklin (espelhamento entre clusters — a peça que sustenta a própria topologia local/agregador da questão 4) e o Bean Counter (auditoria de completude dos fluxos, para saber se uma mensagem publicada de fato chegou aonde devia). O trabalho não desapareceu; trocou "coordenar chamadas" por "operar uma plataforma de dados".
+
+6. Por que a ausência de replicação era aceitável em 2011, e o que o ISR muda
+
+O paper descrevia uma escala de "quase um bilhão de mensagens por dia" — significativa, mas ainda um sistema em estágio inicial, com o time validando se o desenho básico (armazenamento sequencial, page cache, zero-copy) resolvia o problema central de disseminação de eventos. Aceitar o risco de perder mensagens não consumidas numa falha de disco era uma priorização consciente: validar a arquitetura de comunicação primeiro custava menos, naquele estágio, do que atrasar a entrega inteira esperando replicação. O ISR (in-sync replica set), criado depois, muda isso para quem opera hoje: agora existe um líder por partição que escreve primeiro, e um conjunto de réplicas sincronizadas confirma a cópia antes que o líder reconheça a escrita ao produtor — a confirmação passa a depender de redundância real, não do disco de um único broker. É essa peça que sustenta a tolerância a falha dos mais de 4.000 brokers citados na escala atual; sem ela, operar 7 milhões de partições seria inviável, porque uma falha de disco isolada apagaria dados de forma permanente.
