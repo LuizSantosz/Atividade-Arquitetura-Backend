@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hospital-api-config
+  namespace: hospital
+data:
+  APP_ENV: local-kind
